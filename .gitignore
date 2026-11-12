@@ -1,0 +1,18 @@
+
+# Temporales ##########
+*.kate-swp
+#######################
+
+# Informaciónpersonal #
+contexto
+desarrollo
+img
+infoAcceso
+interno
+temp
+*.jpg
+*.png
+*.txt
+.megaignore
+#######################
+

@@ -1,0 +1,870 @@
+#!/bin/bash
+
+# Copyright 2026 Tu Nombre y colaboradores
+# SPDX-License-Identifier: GPL-2.0-only
+# Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo los términos
+# de la Licencia Pública General GNU como publicada por la Free Software Foundation,
+# ya sea la versión 2 de la Licencia, o (a tu elección) cualquier versión posterior.
+
+#         t.me/meritxellbotbot
+
+#07.03.2025
+#La idea es que pueda interactuar con las ias que
+#tengo en ollama desde mi bot de telegram.
+
+# Necesita instalar
+#     sudo apt install jq
+
+# VERSIONES
+#
+# v1.0.0 -> 07.03.2026 Funciona el chat.
+# v1.1.1 -> 08.03.2026 Hecha estructura de comandos en un swich
+# v1.1.2 -> 08.03.2026 Puestos colores en la terminal de la API
+# v1.1.3 -> 08.03.2026 Añadido texto inicial en terminal API
+# v1.1.4 -> 08.03.2026 Guardamos última consulta en ./temp
+# v1.1.5 -> 08.03.2026 Hechas opciones a mano para cambiar IA
+# v1.1.6 -> 08.03.2026 Implementado sistema versiones de la api
+# v1.2.1 -> 09.03.2026 Solucionado corte de mensajes por comillas dobles
+# v1.2.2 -> 09.03.2026 Solucionado que no salian los \n en texto de /help
+# v1.2.3 -> 09.03.2026 Comando /last y /com implementados
+# v1.2.4 -> 09.03.2026 Comando /hw mejorado lijeramente
+# v1.2.5 -> 09.03.2026 Añadido aviso, muestra usuario desconocido que contacta
+# v1.2.6 -> 09.03.2026 Meritxell puede hablar en grupos, solo con /comandos
+# v1.2.7 -> 09.03.2026 Aviso en cartel y con color
+# v1.2.8 -> 09.03.2026 Habilitada la lista blanca de usuarios
+# v1.2.9 -> 09.03.2026 Genera fichero listaB actualizada
+# v1.3.1 -> 10.03.2026 Desvinculado texto /help
+# v1.3.2 -> 10.03.2026 Millores menors de texts en /com y /help
+# v1.3.3 -> 10.03.2026 Accés als grupos de estadístiques i historial
+# v1.3.4 -> 10.03.2026 Avis de inici de API a grup estadístiques
+# v1.3.5 -> 10.03.2026 Corregit comandament fecha propi
+# v1.3.6 -> 10.03.2026 Ajustos menors informació terminal
+# v1.3.7 -> 10.03.2026 El /start redirige a /help
+# v1.3.8 -> 10.03.2026 Es cita al missatge que es vol respondre
+# v1.3.9 -> 10.03.2026 ***Guarda les preguntes en ./historial (persistent)
+# v1.3.+ -> 10.03.2026 Avisa si el comando usado no existe
+# v1.3.+ -> 10.03.2026 Corregit comandamente /clear a no implementat
+# v1.3.+ -> 10.03.2026 Mostra la versió de la API al missatge de inici
+# v1.3.+ -> 10.03.2026 Se envía en modo Markdown los mensajes, pero en MarkdownV1
+# v1.3.+ -> 10.03.2026 Ahora el chat muestra "escribiendo" 5 segundos
+# v1.3.+ -> 10.03.2026 La IA tiene contexto.
+# v1.3.+ -> 10.03.2026 Comando /clear funciona
+# v1.3.+ -> 10.03.2026 Carga contexto al inicio
+# v1.3.+ -> 10.03.2026 Se muestra siempre escribiendo mientras piensa la ia
+# v1.3.+ -> 10.03.2026 Se muestra en terminal un # /4 segundos mientras piensa
+# v1.4.1 -> 13.03.2026 Primer acercamiento acargar los comandos desde codigo
+# v1.4.2 -> 13.03.2026 Funciona con ollama en gráfica.
+# v1.5.1 -> 14.03.2026 Corregido captacion de mensajes null
+# v1.5.2 -> 14.03.2026 6 func hechas: enviar x2,escribiendo x2,modelo y listaB
+# v1.5.3 -> 14.03.2026 Mostrar modelos instalados con /models
+# v1.5.4 -> 14.03.2026 Generar comandos automaticos para los modelos instalados
+# v1.5.5 -> 14.03.2026 Los comandos automáticos funcionan
+# v1.5.6 -> 14.03.2026 Acabada adaptación de peso de modelos a humano
+# v1.5.7 -> 14.03.2026 Actualitza comandaments desde codi
+# v1.5.8 -> 14.03.2026 Solucionat bug, avisava d'usuari sempre si sols uses /algos
+# v1.5.9 -> 14.03.2026 Completat comandament /com (mostra tots els comandaments
+# v1.6.1 -> 15.03.2026 Feta, probada y funcionant funció d'escape de telegram
+# v1.6.2 -> 15.03.2026 Solucionat tema de retornar null (context mal escapat)
+# v1.6.3 -> 15.03.2026 Reorganitzada info de comandaments. Errades menors.
+# v1.6.4 -> 15.03.2026 Acepta imagenes de telegram (comprimidas) y las guarda
+# v1.6.5 -> 15.03.2026 Ollama acepta las imagenes de telegram
+# v1.6.6 -> 15.03.2026 Tenim context amb imatges
+# v1.6.7 -> 15.03.2026 Gestió de arxius en carpetes millorada
+# v1.6.8 -> 15.03.2026 Creació de /reset, borra tot i reinicia en segon plá.
+# v1.6.9 -> 15.03.2026 Creació de /apagar i /reiniciar. Estos 3 sols puc cridar jo
+version="v.1.6.9"  # v.versión.día.mejora
+#
+#
+# Posibles mejoras:
+# comandos
+# Colores en consola
+# Automatizar comandos a los modelos que haya
+# funciones para cosas comunes y repetiticvas
+# Modelo con contexto
+# Modo vervose
+# Añadir opcion de ver el tiempo de la api activa
+# Añadir "escribiendo" mientras piensa la ia
+# Lista blanca en un bucle antes
+# Almacén de Usuarios desconocidos
+# Mover usuarios entre listaB y listaN
+# Crear y eliminar listas negras
+# Holdear el Crtl+c
+# Mensaje de encendido de Estoy de vuelta!
+# Cuando se enciende ignorar todos los mensajes leidos
+# Solo se puede hablar en grupos con /algo (no comandos)???
+
+
+    #Datos:
+#botToken=bot123456789...
+source "$(dirname "${BASH_SOURCE[0]}")./infoAcceso/infoAdmin"
+
+    #Variables y textos:
+ultimoMensaje=0
+contexto=""
+bitReset=0
+
+    #Model predeterminat: (descomentar el predeterminat)
+# modelo=gemma3:270m              # 291 MB
+# modelo=gemma3:1b                # 815 MB
+modelo=gemma3:4b                # 3.3 GB
+# modelo=codegemma:2b             # 1.6 GB
+# modelo=translategemma:4b        # 3.3 GB
+
+    #COLORES
+normal="\e[0m"
+colorInicio="\e[0;37;45m"
+colorOllama="\e[0;34;47m"
+colorTelegram="\e[0;37;46m"
+colorLinux="\e[0;30;42m"
+colorAviso="\e[0;37;41m"
+
+    #Generar listaB
+# echo "
+#     Personas:
+# idTelegram NombreUsuario
+# ...
+# " > ./interno/listaB
+source "$(dirname "${BASH_SOURCE[0]}")./infoAcceso/infoUsuarios"
+
+    #Generar carpetas
+mkdir -p ./contexto
+mkdir -p ./img
+mkdir -p ./temp
+mkdir -p ./interno
+
+    #Esquema:
+#Escucha a Meritxell
+#Cuando reciba mensaje  # de momento no -> espera 7 segundos para nuevos mensajes
+#     Envia texto a ia en ollama
+#     Espera respuesta
+#     Reenvía respuesta
+#Vuelte a esperar Mensajes
+
+    #Texto inicial API
+echo
+echo -e "\t#######################################################"
+echo -e "\t#                                                     #"
+echo -e "\t#    API para conectar Ollama con bot de Telegram     #"
+echo -e "\t#                   Versión: $version                  #"
+echo -e "\t#                                                     #"
+echo -e "\t#     $colorInicio[ 9.03.26-01:54:16]$normal -> Espera de nuevo mensaje  #"
+echo -e "\t#                                                     #"
+echo -e "\t#     $colorLinux[ 9.03.26-01:54:16]$normal -> Proceso de Linux         #"
+echo -e "\t#                                                     #"
+echo -e "\t#     $colorOllama[ 9.03.26-01:54:16]$normal -> Proceso de IAs           #"
+echo -e "\t#                                                     #"
+echo -e "\t#     $colorTelegram[ 9.03.26-01:54:16]$normal -> Proceso de Telegram      #"
+echo -e "\t#                                                     #"
+echo -e "\t#     $colorAviso[ 9.03.26-01:54:16]$normal -> Aviso de acción inusual  #"
+echo -e "\t#                                                     #"
+echo -e "\t#######################################################"
+
+    #Aviso a Alex del inicio de la API
+    # Función para escapar los caracteres de MarkdownV2 de la IA
+    escape_md() {
+        local txt="$1"
+        txt="${txt//_/\\_}"
+        txt="${txt//*/\\*}"
+        txt="${txt//[/\\[}"
+        txt="${txt//]/\\]}"
+        txt="${txt//(/\\(}"
+        txt="${txt//)/\\)}"
+        txt="${txt//~/\\~}"
+        txt="${txt//\`/\\\`}"
+        txt="${txt//>/\\>}"
+        txt="${txt//#/\\#}"
+        txt="${txt//+/\\+}"
+        txt="${txt//-/\\-}"
+        txt="${txt//= /\\=}"
+        txt="${txt//|/\\|}"
+        txt="${txt//\{ /\\{ }"
+        txt="${txt//\}/\\}}"
+        txt="${txt//./\\.}"
+        txt="${txt//!/\\!}"
+        echo "$txt"
+    }
+    respuestaIa=$(fecha)"La API *meritxell.api* $version activada desde $(hostname)"
+    respuestaEsc=$(escape_md "$respuestaIa")
+    curl -s -X POST https://api.telegram.org/$botToken/sendMessage -H "Content-Type: application/json" -d "{\"chat_id\":\"-4996150704\",\"text\":\"$respuestaIa\"}" > /dev/null #El ! hay que escaparlo
+    respuestaIa=""
+    echo
+    fecha $colorInicio
+    echo "Inicio informado."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # FUNCIONES
+#Llamar a las funciones con:
+#   enviarMensaje "$botToken" "$chatOrigen" "$respuestaIa" "$idMensaje"
+#
+    # FUNCIONES AUXILIARES
+function mostrarPesoEnHumano()  #ARGs: $peso
+{
+    #Adaptación de variables pasadas como argumento
+    peso=$1
+
+    #Obtenemos unidades y convertimos de Bytes a las unidades
+#     if (( peso >= 1024**4 )); then # 1024*1024*1024*1024 = 1.048.576.000.000 = 1 TB
+#         unidades="TB"
+#         echo $unidades
+#         (( peso = peso / 1024**4 ))
+    if (( peso >= 1073741824 )); then # 1024*1024*1024 = 1.073.741.824 = 1 GB
+        unidades="GB"
+        peso=$(echo "scale=1;$peso/(1024^3)" | bc)  #scale son los decimales
+    elif (( peso >= 1024**2 )); then # 1024*1024 = 1 048 576 = 1 MB
+        unidades="MB"
+        peso=$(echo "scale=0;$peso/(1024^2)" | bc)
+    elif (( peso >= 1024 )); then
+        unidades="KB"
+        peso=$(echo "scale=0;$peso/1024" | bc)
+    else
+        unidades="By"
+    fi
+
+    echo "$peso $unidades"
+}
+function escaparMarkdown()  #ARGs: $texto
+{
+    #Adaptación de variables pasadas como argumento
+    texto=$1
+
+    #Sabiduría
+#   '...' -> no interpretan su interior
+#             Si pones \n no añadiria salto de linea
+#   sed -> Uso: -e 's/*/\\*/g'
+#               -> sustituye (s) todas las coincidencias (g)
+#               -> de * por \* (se escapa la barra -> \\*)
+#          Para interpretar: (echo sin -e)
+#               -> \
+#               necesita-> escapar con \\
+
+    #Caracteres escapados y no escapados:
+#  \ -> \\
+#  / -> /   #sin escape
+#    -e 's/`/\\\\`/g' #funciona, necesito usar ` normal
+#  * -> \\* que muestra \*
+#  ** -> \*\* -> *
+#  _ -> \_
+#  { -> \}
+#  { -> \{
+#  [ -> \[
+#  ] -> \]
+#  ) -> \)
+#  ( -> \(
+#  " -> \"
+#    -e 's/#/hola/g' \ #Funciona, se muestra solo
+#    -e 's/+/\\\\+/g' \ #Funciona, se muestra solo
+#    -e 's/-/\\\\-/g' \ #Funciona, se muestra solo
+#    -e 's/\./\\\\./g' \ #Funciona, se muestra solo
+#    -e 's/\!/\\\\!/g' #Funciona, se muestra solo
+#    -e 's/|/\\\\|/g' \ #Funciona, se muestra solo
+#    -e 's/>/\\\\>/g' \ #Funciona, se muestra solo
+#    -e 's/~/\\\\~/g' #Funciona, se muestra solo
+#    -e 's/(/\\(/g' \ #Funciona, se muestra solo
+#    -e 's/)/\\)/g' \ #Funciona, se muestra solo
+    texto=$(echo -E $texto | sed -e 's/\\/\\\\/g' \
+                            -e 's/\//\//g' \
+                            -e 's/\*/\\\\*/g' \
+                            -e 's/\\\\\*\\\\\*/*/g' \
+                            -e 's/_/\\\\_/g' \
+                            -e 's/{/\\{/g' \
+                            -e 's/}/\\}/g' \
+                            -e 's/\[/\\\\[/g' \
+                            -e 's/\]/\\]/g' \
+                            -e 's/"/\\"/g'
+           )
+    echo -e $texto
+}
+function mostrarEscribiendo()  #ARGs: $botToken $chatOrigen
+{
+    #Adaptación de variables pasadas como argumento
+    botToken=$1
+    chatOrigen=$2
+
+    curl -s -X POST https://api.telegram.org/$botToken/sendChatAction -H "Content-Type: application/json" -d "{\"chat_id\":\"$chatOrigen\",\"action\":\"typing\" }" > /dev/null
+}
+function mostrarEscribiendoInfinito()  #ARGs: $botToken $chatOrigen
+{
+    #Adaptación de variables pasadas como argumento
+    botToken=$1
+    chatOrigen=$2
+
+    for((;;)); do
+        #El "escribiendo" dura unos 5 segundo
+        mostrarEscribiendo "$botToken" "$chatOrigen"
+        echo -n "#" >&2
+        sleep 4
+    done
+}
+function enListaBlanca()  #ARGs: $idAutor $chatOrigen
+{
+    autorizado=0
+    while IFS= read -r linea; do
+        read -r idUsuario nombreUsuario _ <<< "$linea"
+        if [[ "$idAutor" == "$idUsuario" ]]; then   #Si es un usuario conocido
+            autorizado=1
+        fi
+        if [[ "$chatOrigen" == "$idUsuario" ]]; then #Si es un grupo conocido
+            autorizado=1
+        fi
+    done < ./interno/listaB
+
+    if [[ "$autorizado" == "1" ]]; then #Si es un grupo conocido
+        return 1
+    else
+        return 0
+    fi
+}
+    # FUNCIONES PRINCIPALES
+function enviarMensaje() #ARGs: $botToken $chatOrigen $respuestaIa $idMensaje
+{
+    #Adaptación de variables pasadas como argumento
+    botToken=$1
+    chatOrigen=$2
+    respuestaIa=$3
+    idMensaje=$4
+
+    curl -s -X POST https://api.telegram.org/$botToken/sendMessage -H "Content-Type: application/json" -d "{\"chat_id\":\"$chatOrigen\",\"text\":\"$respuestaIa\",\"reply_to_message_id\": \"$idMensaje\", \"parse_mode\":\"Markdown\"}" > /dev/null #El ! hay que escaparlo
+}
+function enviarMensajeSinCitar()  #ARGs: $botToken $chatOrigen $respuestaIa
+{
+    #Adaptación de variables pasadas como argumento
+    botToken=$1
+    chatOrigen=$2
+    respuestaIa=$3
+
+    curl -s -X POST https://api.telegram.org/$botToken/sendMessage -H "Content-Type: application/json" -d "{\"chat_id\":\"$chatOrigen\",\"text\":\"$respuestaIa\", \"parse_mode\":\"Markdown\"}" > /dev/null #El ! hay que escaparlo
+}
+function descargarImagen()  #ARGs: $idImagen $botToken $idAutor
+{
+    #Adaptación de variables pasadas como argumento
+    idImagen=$1
+    botToken=$2
+    idAutor=$3
+
+        #Descargamos imagen
+    #Obtenemos datos de la imagen
+    varJson=$(curl -s "https://api.telegram.org/$botToken/getFile?file_id=$idImagen")
+    #Extraemos ruta de la imagen
+    rutaImg=$(echo "$varJson" | jq -r '.result.file_path')
+    #Generamos nombre de la imagen
+    nomImg="./img/$idAutor$(fecha).png"
+    #Descargamos la image
+    curl -s "https://api.telegram.org/file/$botToken/$rutaImg" -o "$nomImg"
+
+    echo $nomImg
+}
+function llamadaModelo()  #ARGs: $colorOllama $modelo $contexto $texto $botToken $chatOrigen $idAutor
+{
+    #Adaptación de variables pasadas como argumento
+    colorOllama=$1
+    modelo=$2
+    contexto=$3
+    texto=$4
+    botToken=$5
+    chatOrigen=$6
+    idAutor=$7
+
+    #pasa a ollama
+    fecha $colorOllama >&2
+    echo "Llamando al modelo..." >&2
+
+    echo "{ \"model\": \"$modelo\", \"messages\": [$contexto{\"role\":\"user\",\"content\":\"$texto\"}], \"stream\": false}" > "./temp/consulta$idAutor.temp"
+
+    #Modelo con contexto en segundo plano
+    exec 3< <(curl -s -X POST http://localhost:11434/api/chat -H "Content-Type: application/json" -d @"./temp/consulta$idAutor.temp" )
+    pidIA=$!
+
+    #Modelo con contexto en segundo plano ( contexto sin imagenes )
+#     exec 3< <(curl -s http://localhost:11434/api/chat -d "{ \"model\": \"$modelo\", \"messages\": [$contexto{\"role\": \"user\",\"content\": \"$texto\"}], \"stream\": false}")
+#     pidIA=$!
+
+    #Informamos de que está pensando en segundo plano
+    fecha $colorOllama >&2
+    echo -n "Pensant..." >&2
+    mostrarEscribiendoInfinito "$botToken" "$chatOrigen" &
+    pidEscribiendo=$!
+
+    #Gestion de los procesos en segundo plano
+    wait $pidIA
+    kill "$pidEscribiendo" > /dev/null
+    echo >&2
+    respuestaIa=$(cat <&3)                  #Leemos descriptor
+    exec 3<&-                               #Eliminamos descriptor
+    rm -f "./temp/consulta$idAutor.temp"    #Eliminamos el archivo temporal
+
+    #Extraigo texto de respuesta
+    respuestaIa=$(echo $respuestaIa | jq -r '.message.content')
+
+    #Pasamos respuesta para poder ser enviada
+    echo $respuestaIa >&1
+
+    #Escapamos la respuesta de la ia antes de guardarla
+    respuestaIa=$(escaparMarkdown "$respuestaIA")
+
+    #Augmentar contexto
+    nuevoFragmento='{"role": "user","content":"'$texto'"},{"role": "assistant","content":"'$respuestaIa'"},'
+    echo -n $nuevoFragmento >> "contexto/ctxt$idAutor.txt"
+
+    #Vaciado de variables
+    contexto=""
+
+        #Modelo sin contexto (1 solo mensaje y se olvida)
+    #respuestaIa=$( curl -s http://localhost:11434/api/generate -d "{\"model\": \"$modelo\",\"prompt\": \"${texto}\", \"stream\": false}" )
+    #respuestaIa=$(echo $respuestaIa | jq -r '.response')
+
+    fecha $colorOllama >&2
+    echo "Respuesta generada" >&2
+}
+function llamadaModeloImagen()  #ARGs: $colorOllama $modelo $contexto $comentarioFoto $botToken $chatOrigen $idAutor $rutaImagen
+{
+    #Adaptación de variables pasadas como argumento
+    colorOllama=$1
+    modelo=$2
+    contexto=$3
+    comentarioFoto=$4
+    botToken=$5
+    chatOrigen=$6
+    idAutor=$7
+    rutaImagen=$8
+
+    #pasa a ollama
+    fecha $colorOllama >&2
+    echo "Llamando al modelo..." >&2
+
+    #Procesar imagen
+    img=$(base64 < $rutaImagen | tr -d '\n')
+
+    #Creamos consulta con contexto e imagen adjunta
+    echo "{ \"model\": \"$modelo\", \"messages\": [$contexto{\"role\":\"user\",\"content\":\"$comentarioFoto\",\"images\": [\"$img\"]}], \"stream\": false}" > "./temp/img$idAutor.temp"
+
+    #Modelo con contexto en segundo plano
+    exec 3< <(curl -s -X POST http://localhost:11434/api/chat -H "Content-Type: application/json" -d @"./temp/img$idAutor.temp" )
+    pidIA=$!
+
+    #Informamos de que está pensando en segundo plano
+    fecha $colorOllama >&2
+    echo -n "Pensant..." >&2
+    mostrarEscribiendoInfinito "$botToken" "$chatOrigen" &
+    pidEscribiendo=$!
+
+    #Gestion de los procesos en segundo plano
+    wait $pidIA
+    kill "$pidEscribiendo" > /dev/null
+    echo >&2
+    respuestaIa=$(cat <&3)          #Leemos descriptor
+    exec 3<&-                       #Eliminamos descriptor
+    rm -f "./temp/img$idAutor.temp" #Eliminamos el archivo temporal
+
+
+    #Extraigo texto de respuesta
+    respuestaIa=$(echo $respuestaIa | jq -r '.message.content')
+
+    #Pasamos respuesta para poder ser enviada
+    echo $respuestaIa >&1
+
+    #Augmentar contexto
+    nuevoFragmento='{"role": "user","content": "'$comentarioFoto'","images": ["'$img'"]},{"role": "assistant","content":"'$respuestaIa'"},'
+    echo -n $nuevoFragmento >> "contexto/ctxt$idAutor.txt"
+
+    #Vaciado de variables
+    contexto=""
+
+        #Modelo sin contexto (1 solo mensaje y se olvida)
+    #respuestaIa=$( curl -s http://localhost:11434/api/generate -d "{\"model\": \"$modelo\",\"prompt\": \"${comentarioFoto}\", \"stream\": false}" )
+    #respuestaIa=$(echo $respuestaIa | jq -r '.response')
+
+    fecha $colorOllama >&2
+    echo "Respuesta generada" >&2
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #Bucle Principal
+for ((;;)); do
+        #Esperando mensajes con long polling
+    fecha $colorInicio
+    echo -n "Esperando mensaje >$ultimoMensaje< a Meritxell en Telegram"
+    res=$(curl -s "https://api.telegram.org/$botToken/getUpdates?offset=${ultimoMensaje}&timeout=300")
+    #res=$(curl -s "https://api.telegram.org/$botToken/getUpdates?timeout=300")
+
+        #Caso /reset
+    if (( bitReset == 1 )); then
+        echo
+        fecha $colorAviso
+        echo "Cerrada instancia anterior"
+        exit
+    fi
+
+        #Procesamos mensaje
+    echo
+    fecha $colorLinux
+    echo "Procesando mensaje..."
+    #Obteniendo variables Parte 1
+    ultimoMensaje=$(echo $res | jq -r '.result[0].update_id')
+
+        #Respondemos mensaje
+    if [[ "$ultimoMensaje" != "null" ]]; then
+        ultimoMensaje=$((ultimoMensaje + 1))  #Marcamos como leido el mensaje
+
+        #Obteniendo variables Parte 2
+           idAutor=$(echo $res | jq -r '.result[0].message.from.id')
+            nombre=$(echo $res | jq -r '.result[0].message.from.first_name')
+          apellido=$(echo $res | jq -r '.result[0].message.from.last_name')
+        chatOrigen=$(echo $res | jq -r '.result[0].message.chat.id')
+        chatNombre=$(echo $res | jq -r '.result[0].message.chat.title')
+         idMensaje=$(echo $res | jq -r '.result[0].message.message_id')
+             texto=$(echo $res | jq -r '.result[0].message.text')
+        #Escapamos texto de entrada, los " y \
+        texto=$(echo -e $texto | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+
+            #Obteniendo variables Parte 3    (versión de imagen más grande)
+        #Obtiene lista de imagenes
+        idImagen=$(echo "$res" | jq -c '.result[0].message.photo[0]')
+        #Si es una imagen
+        if [[ "$idImagen" != "null" && "$idImagen" != "" ]]; then
+            #Obtiene lista de imagenes
+            idImagen=$(echo "$res" | jq -c '.result[0].message.photo[]')
+            #Obtenemos el comentario de la foto
+            comentarioFoto=$(echo $res | jq -r '.result[0].message.caption')
+            #Nos quedamos con a imagen más grande
+            anchoMax=0
+            while IFS= read -r foto; do
+                    imgAncho=$(echo "$photo" | jq -r '.width')
+                if (( anchoMax <= imgAncho )); then
+                    idImagen=$(echo "$foto" | jq -r '.file_id')
+                    #Datos que no uso de la imagen:
+                    #idImagenU=$(echo "$photo" | jq -r '.file_unique_id')
+                    #   imgTam=$(echo "$photo" | jq -r '.file_size')
+                    #   imgAlto=$(echo "$foto" | jq -r '.height')
+                fi
+            done < <(printf '%s\n' "$idImagen")
+        fi
+
+        #Informando a consola
+        fecha $colorLinux
+        echo -e "Autor $idAutor en $chatNombre($chatOrigen)"
+        fecha $colorLinux
+        echo -e "Texto recibido >$texto<"
+
+        #Guardando en historial
+        echo -e $(fecha)"\n\tAutor\n$nombre($idAutor)\n\tMensaje:\n$texto\n\n" >> ./interno/historial
+        fecha $colorLinux
+        echo -e "Pregunta guardada en ./interno/historial"
+
+            #Gestión de usuarios
+        #Comprobamos que el id esté en la lista blanca.
+        fecha $colorLinux
+        echo "Autenticando usuario..."
+        enListaBlanca "$idAutor" "$chatOrigen"
+        autorizado=$?
+        #Si es de alguien conocido o Alex, entras
+        if [[  "$idAutor" == "$idAlex" || "$autorizado" == "1" ]]; then
+            #Informamos
+            fecha $colorLinux
+            echo "Confirmado remitente: $nombre ($idAutor)"
+
+            #Carga del contexto
+            if [[ -e "./contexto/ctxt$idAutor.txt" ]]; then
+                contexto=$(cat "./contexto/ctxt$idAutor.txt")
+            else
+                fecha $colorLinux
+                echo "Nuevo Usuario (sin registro previo)"
+                > ./contexto/ctxt$idAutor.txt
+                respuestaIa="Sembla que no hem parlat mai. Sols tenim un contex, per borrar-lo usa /clear ."
+                enviarMensajeSinCitar "$botToken" "$chatOrigen" "$respuestaIa"
+            fi
+
+            #Switch de acción
+            case "$texto" in
+                /comandos)
+                    misComandos="{\"command\":\"help\",\"description\":\"¿Quí o que es Meritxell?\"}"
+                    listaComandos=("models" "clear")
+                    listaDescripciones=("Models disponibles" "Borra sessió")
+                    for i in "${!listaComandos[@]}"; do
+                        misComandos=$misComandos",{\"command\":\"${listaComandos[i]}\",\"description\":\"${listaDescripciones[i]}\"}"
+                    done
+
+                    curl -s -X POST "https://api.telegram.org/$botToken/setMyCommands" -H "Content-Type: application/json" -d "{\"commands\":[$misComandos],\"scope\": { \"type\": \"default\" } }"
+                    echo
+
+                    respuestaIa="S'están actualizant els comandaments"
+                    ;;
+                /help|/start|/info)
+                    respuestaIa=$'Meritxell ('$version$') es un bot per interactuar amb models d\'ia. Elegeix un model dels mostrats amb /models i clica sobre el que preferisques.\\n\\nTambé pots:\\n/clear -> Esborra el context de la ia.\\n/hw -> Curiosetja el hardware.\\n/status -> Consulta l\'estat del sistema.\\n\\nPer a més comandaments... /com'
+                    ;;
+                /com)
+                    respuestaIa="Aquest son els comandaments ocults:\n\n"
+                    respuestaIa+="/help -> Informació general.\n"
+                    respuestaIa+="/info -> Ídem a /help.\n"
+                    respuestaIa+="/start -> Ídem a /help.\n"
+                    respuestaIa+="/com -> Mostra tots els comandaments.\n"
+                    respuestaIa+="/last -> mostra la consulta anterior.\n"
+                    respuestaIa+="/clear -> Neteja el context de la ia.\n"
+                    respuestaIa+="/models -> Mostra els models disponibles.\n"
+                    respuestaIa+="/mod -> Ídem a /models.\n"
+                    respuestaIa+="/hw -> Mostra el hardware actual.\n"
+                    respuestaIa+="/status -> Mostra l'estat del hardware.\n"
+                    respuestaIa+="/comandos -> Actualitza els comandaments."
+
+                    ;;
+                /models|/mod)
+                    respuestaIa=$( curl -s http://localhost:11434/api/tags )
+
+                    #Obtener los nombres y peso de todos los modelos que hay instalados
+                    nombres=$(echo $respuestaIa | jq -r '.models[].name')
+                       peso=$(echo $respuestaIa | jq -r '.models[].size')
+
+                    #Convertir lineas en elementos de un vector
+                    IFS=$'\n'   # separador = espacio
+                    read -r -d '' -a listaNombres <<< "$nombres"
+                    read -r -d '' -a listaPesos <<< "$peso"
+
+                    #Generamos el texto
+                    respuestaIa=">>>Model actual: *$modelo*\n"
+                    respuestaIa+=">>>Màquina actual: *$(hostname)*\n\n"
+                    for i in "${!listaNombres[@]}"; do
+                        #Generar comandos
+                        comm="run_${listaNombres[i]}"
+                        comm="/$(echo -e $comm | sed -e 's/_/X/g' -e 's/:/X/g' -e 's/\//X/g'  -e 's/-/X/g')"
+
+                        #Adaptamos memoria a algo legible
+                        peso=$(mostrarPesoEnHumano "${listaPesos[i]}")
+                        peso="\`$peso\`"
+
+                        #Generar lista
+                        respuestaIa="$respuestaIa\($peso\) ${listaNombres[i]} $comm\n\n"
+                    done
+                    ;;
+                /status)
+                    respuestaIa="No imlementat de moment..."
+                    ;;
+                /hw)
+                    respuestaIa=$(hostnamectl && lscpu | grep "Nombre del modelo:" && lscpu | grep "CPU(s):" && lscpu | grep "Operating System" && lscpu | grep "Kernel" )
+                    ;;
+                /clear)
+                    contexto=""
+                    > "./contexto/ctxt$idAutor.txt"
+                    respuestaIa="Context de $nombre($idAutor) borrat"
+                    ;;
+                /run*)
+                    #Obtenemos nombres reales
+                    respuestaIa=$( curl -s http://localhost:11434/api/tags )
+                    nombres=$(echo $respuestaIa | jq -r '.models[].name')
+                    #Convertir lineas en elementos de un vector
+                    IFS=$'\n'   # separador = espacio
+                    read -r -d '' -a listaNombres <<< "$nombres"
+                    #Comparar lista de comandos
+                    encontrado=0
+                    for i in "${!listaNombres[@]}"; do
+                        #Generar comandos
+                        nom="run_${listaNombres[i]}"
+
+                        #Traducir con mismo escapado
+                        nom="/$(echo -e $nom | sed -e 's/_/X/g' -e 's/:/X/g' -e 's/\//X/g'  -e 's/-/X/g')"
+
+                        #Comparamos con comando introducido
+                        if [ "$nom" = "$texto" ]; then
+                            #Si alguno es igual
+                            modelo=${listaNombres[i]}
+                            encontrado="1"
+                        fi
+                    done
+                    #Si lo hemos encontrado actuamos
+                    if (( "$encontrado" == "1" )); then
+                        respuestaIa="Ara s'usará el model $modelo."
+                    else
+                        respuestaIa="No existeix el modelo $texto, selecciona un dels existents. Es mante el model actual: $modelo"
+                    fi
+                    ;;
+                /last)
+                    respuestaIa=$(cat ./temp/temp.temp)
+                    ;;
+                /apagar)
+                    if [[  "$idAutor" == "$idAlex" ]]; then
+                        bitReset=1
+                    else
+                        respuestaIa="No tens permis per a executar el comandament $texto"
+                    fi
+                    ;;
+                /reiniciar)
+                    if [[  "$idAutor" == "$idAlex" ]]; then
+                        #Creamos nueva instancia (la anterior se autodestruirá)
+                        segundoPlano ./meritxell.api
+
+                        #Activo el bit de reset
+                        bitReset=1
+                    else
+                        respuestaIa="No tens permis per a executar el comandament $texto"
+                    fi
+                    ;;
+                /reset)
+                    if [[  "$idAutor" == "$idAlex" ]]; then
+                        #Borramos todos los registros y archivos temporales
+                        rm -rf ./contexto ./img ./interno ./temp
+
+                        #Creamos nueva instancia (la anterior se autodestruirá)
+                        segundoPlano ./meritxell.api
+
+                        #Activo el bit de reset
+                        bitReset=1
+                    else
+                        respuestaIa="No tens permis per a executar el comandament $texto"
+                    fi
+                    ;;
+                /*)
+                    respuestaIa="No existeix el comandament $texto. Proba amb /help"
+                    ;;
+                *)
+                        #pasa a ollama
+                    fecha $colorOllama
+                    echo "Pasando mensaje a Ollama"
+                    #Si es una imagen
+                    if [[ "$idImagen" != "null" && "$idImagen" != "" ]]; then
+                        #Informando a terminal
+                        fecha $colorTelegram
+                        echo "Descargando imagen de telegram"
+                        #Descarga de la imagen
+                        rutaImagen=$(descargarImagen "$idImagen" "$botToken" "$idAutor")
+                        #Informando a terminal
+                        fecha $colorOllama
+                        echo "Pasando imagen a Ollama"
+                        #Pasamos imagen a ollama
+                        respuestaIa=$(llamadaModeloImagen "$colorOllama" "$modelo" "$contexto" "$comentarioFoto" "$botToken" "$chatOrigen" "$idAutor" "$rutaImagen")
+                    elif [[ "$texto" != "null" && "$texto" != "" ]]; then  #Si es un texto
+                        #Si es texto
+                        fecha $colorOllama
+                        echo "Procesando texto"
+                        respuestaIa=$(llamadaModelo "$colorOllama" "$modelo" "$contexto" "$texto" "$botToken" "$chatOrigen" "$idAutor")
+                    else
+                        fecha $colorAviso
+                        echo "No es imagen ni texto"
+                    fi
+
+                    texto=""
+                    idImagen=""
+                    comentarioFoto=""
+                    ;;
+            esac
+
+            #Avisa de que el mensaje ya se ha redactado
+            fecha $colorTelegram
+            echo "Mensaje redactado"
+
+
+                # Enviando texto generado
+            #Avisa de que se está enviando el mensaje
+            fecha $colorTelegram
+            echo -e "Meritxell está respondiendo en Telegram..."
+
+            #Escapamos todo el texto
+            respuestaIa=$(escaparMarkdown "$respuestaIa")
+
+            #Devuelve respuesta por telegram
+            enviarMensaje "$botToken" "$chatOrigen" "$respuestaIa" "$idMensaje"
+
+            #Avisa de que se ha enviado el mensaje
+            fecha $colorTelegram
+            echo "Mensaje enviado"
+
+            #Guardamos última consulta
+            echo -e "\n\tPREGUNTA:\n$texto" > ./temp/temp.temp
+            echo -e "\n\n\tRESPUESTA:\n$respuestaIa\n\n ### fin ###" >> ./temp/temp.temp
+
+            #Vaciamos la variable para evitar errores
+            respuestaIa=""
+
+        else
+            fecha $colorAviso
+            echo "Usuario sin identificar >$idAutor< >$nombre< >$apellido<"
+            echo "Usuario sin identificar >$idAutor< >$nombre< >$apellido<" >> ./interno/listaN
+        fi
+    else
+        fecha $colorTelegram
+        echo "No ha habido nuevos mensajes..."
+    fi
+done
+
+
+
+
+
+
+#Formato de un mensaje nuevo de telegram:
+# {
+#   "ok": true,
+#   "result": [
+#     {
+#       "update_id": 636660145,
+#       "message": {
+#         "message_id": 21,
+#         "from": {
+#           "id": idUsuario,
+#           "is_bot": false,
+#           "first_name": "Alex",
+#           "last_name": "",
+#           "language_code": "ca"
+#         },
+#         "chat": {
+#           "id": idUsuario,
+#           "first_name": "Alex",
+#           "last_name": "",
+#           "type": "private"
+#         },
+#         "date": 1772933215,
+#         "text": "akjakwbrwajkddffg"
+#       }
+#     }
+#   ]
+# }
