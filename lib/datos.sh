@@ -47,3 +47,20 @@ mkdir -p ./contexto
 mkdir -p ./img
 mkdir -p ./temp
 mkdir -p ./interno
+
+#   DISTRIBUCION DE CARPETAS
+# desarrollo
+# contexto
+# temp
+#   interno
+#       listaB
+#       listaBnueva
+#       listaN
+#       historial
+#   img
+#       ...
+#   downloads
+#       ...
+#   docs
+#       ...
+#   temp.temp
