@@ -1,4 +1,9 @@
 
+# Copyright 2026 Alex (alex.correu@pm.me)
+# SPDX-License-Identifier: GPL-2.0-only
+# Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo los términos
+# de la Licencia Pública General GNU como publicada por la Free Software Foundation,
+# ya sea la versión 2 de la Licencia, o (a tu elección) cualquier versión posterior.
 
     # FUNCIONES
 #Llamar a las funciones con:
