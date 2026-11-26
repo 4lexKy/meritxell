@@ -83,7 +83,8 @@
 # v1.7.8 -> 10.10.2026 Investigat botons. Permet temporalment l'accés a nous amb "canibal"
 # v1.7.9 -> 10.10.2026 Generador de QRs fet amb /qr
 # v1.7.x -> 10.10.2026 Pasat a funció case utils i qr
-version="v.1.7.x"  # v.versión.día.mejora
+# v1.8.0 -> 26.11.2026 Descargador de yt (downyt) funciona correctamente
+version="v.1.8.0"  # v.versión.día.mejora
 #
 #
 # Posibles mejoras:
@@ -436,7 +437,7 @@ for ((;;)); do
                     #Definimos ruta del descargador
                     downytRuta="./.dependencias/downyt/downyt"
                     #Definimos ruta de descargas
-                    if [[ "$texto" == "yt" ]]; then
+                    if [[ "${texto%% *}" == "/yt" ]]; then
                         #Usamos ruta de descarga temporal"
                         rutaGuardado="$(pwd)/temp/downyt"
                         #Borramos datos anteriores para no almacenar
@@ -486,7 +487,9 @@ for ((;;)); do
                             #Comprobamos si debemos enviar y donde guardar
                         #Si el comando es /yt se envia de vuelta el archivo
 #                         if [ $(echo "$texto" | cut -d' ' -f1) =  "/yt" ]; then
-                        if [ "${texto#* }" =  "/yt" ]; then # el cas /ytp será el else
+                        if [[ "${texto%% *}" == "/yt" ]]; then # el cas /ytp será el else
+                            #Eliminamos los archivos anteriores para que no ocupen
+                            rm -rf $rutaGuardado/*
                             #Descarga para enviar al chat
                             $downytRuta -p "$rutaGuardado" -a   "$urlYT" #Solo audio
                             $downytRuta -p "$rutaGuardado" -v a "$urlYT" #Vídeo 1080p-AV1
@@ -506,7 +509,7 @@ for ((;;)); do
                                 textoInformativo=$( basename "$ficheroAenviarV" )
                                 echo $ficheroAenviarV
                                 enviarDocumento "$botToken" "$chatOrigen" "$ficheroAenviarV" "$textoInformativo" "$idMensaje"
-                                if (( $? != "0" )); then
+                                if (( "$?" != "0" )); then
                                     respuestaIa+="Vídeo muy grande para enviar."
                                 else
                                     respuestaIa+="Video Enviado.\n"
@@ -525,7 +528,7 @@ for ((;;)); do
                                 $downytRuta -p "$rutaGuardado" -v b "$urlYT" #Vídeo 1080p-MaxBitrate
                                 $downytRuta -p "$rutaGuardado" -v c "$urlYT" #Vídeo max
 #                                 ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
-                                respuestaIa="Descarga completada en $rutaGuardado"
+                                respuestaIa="Descarga completada :)"
                             else
                                 respuestaIa="Sols l'administrador pot usar aquesta opció."
                             fi
