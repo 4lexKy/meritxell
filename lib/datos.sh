@@ -15,8 +15,7 @@
 
 
 
-    #Datos:
-source "$(dirname "${BASH_SOURCE[0]}")./infoAcceso/infoAdmin"
+
 
     #Variables y textos:
 ultimoMensaje=0
@@ -40,13 +39,7 @@ colorLinux="\e[0;30;42m"
 colorUtiles="\e[0;37;44m"
 colorAviso="\e[0;37;41m"
 
-    #Generar listaB
-# echo "
-#     Personas:
-# idTelegram NombreUsuario
-# ...
-# " > ./interno/listaB
-source "$(dirname "${BASH_SOURCE[0]}")./infoAcceso/infoUsuarios"
+
 
     #Generar carpetas
 mkdir -p ./contexto

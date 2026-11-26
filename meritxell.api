@@ -113,6 +113,19 @@ version="v.1.7.x"  # v.versión.día.mejora
 
 
 
+    #Datos:
+source ./infoAcceso/infoAdmin
+# idAlex=... #Id del admin
+# botToken=bot...
+# idChatEstadisticas="..."
+
+source $./infoAcceso/infoUsuarios
+    #Generar listaB
+# echo "
+#     Personas:
+# idTelegram NombreUsuario
+# ...
+# " > ./interno/listaB
 
     #FUNCIONES
 source ./lib/datos.sh
