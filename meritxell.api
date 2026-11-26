@@ -13,7 +13,7 @@
 #tengo en ollama desde mi bot de telegram.
 
 # Necesita instalar
-#     sudo apt install jq qrencode libreoffice
+#     sudo apt install jq qrencode libreoffice git
 
 # VERSIONES
 #
@@ -119,7 +119,7 @@ source ./infoAcceso/infoAdmin
 # botToken=bot...
 # idChatEstadisticas="..."
 
-source $./infoAcceso/infoUsuarios
+source ./infoAcceso/infoUsuarios
     #Generar listaB
 # echo "
 #     Personas:
@@ -428,31 +428,71 @@ for ((;;)); do
                     #Genera un qr y lo envía de vuelta
                     caseQR
                     ;;
-                /yt*|/ytn*)
+                /yt*|/ytp*)
                     #Informamos de que está trabajando el bot
                     mostrarEscribiendoInfinito "$botToken" "$chatOrigen" &
                     pidEscribiendo=$!
-                    #Borramos datos anteriores para no almacenar
-                    rutaGuardado="~/scriptsAlex/en_ello/ytdw/ytdw-descargas"
-                    rm -rf $rutaGuardado
-                    #Mostramos el texto salvo la primera palabra (que será el comando)
-                    if [ "${texto#* }" =  "/yt" ]; then #Si solo hay una palabra es que no hay url
-                        respuestaIa="Per a usar la descàrrega has d'escriure el comandament /yt seguit del enllaç del vídeo a descarregar així: \"/yt url\""
+
+                    #Definimos ruta del descargador
+                    downytRuta="./.dependencias/downyt/downyt"
+                    #Definimos ruta de descargas
+                    if [[ "$texto" == "yt" ]]; then
+                        #Usamos ruta de descarga temporal"
+                        rutaGuardado="$(pwd)/temp/downyt"
+                        #Borramos datos anteriores para no almacenar
+                        rm -rf "$rutaGuardado/*"
                     else
+                        #Usamos ruta de descarga persistente (definida en ./lib/datos)
+                        rutaGuardado=$rutaDescargaYoutube
+                    fi
+
+                    # Satisfacer dependencia downyt
+                    if [[ -e $(dirname $downytRuta) && ! -d $(dirname $downytRuta) ]]; then
+                        #Existeix però no és un directori
+                        rm -rf $(dirname $downytRuta)
+                        ( #descargamos downyt
+                        cd ./.dependencias
+                        git clone https://github.com/4lexKy/downyt
+                        )
+                    elif [[ ! -e $(dirname $downytRuta) ]]; then
+                        #Si no existe la carpeta de downyt, descargamos downyt
+                        (
+                        cd ./.dependencias
+                        git clone https://github.com/4lexKy/downyt
+                        )
+                    fi #Si existeix carpeta no fem res
+
+                    #Si el comando viene sin URL informamos de como se usa, sino empieza la descarga
+                    if [ "${texto#* }" =  "/yt" ]; then
+                        #Si solo hay una palabra -> es que no hay url
+                        respuestaIa="Per a usar la descàrrega has d'escriure el comandament /yt seguit del enllaç del vídeo a descarregar així: \"/yt urlYoutube\""
+                    else
+                            #Empieza la descarga
+                        #Obtenemos URL
+                        urlYT=${texto#* } #Obtenemos resto de texto
+                        urlYT=${urlYT%% *} #nos quedamos solo con la primera palabra (url)
                         #Informa en terminal
                         fecha $colorUtiles
-                        echo "Descargando enlace: ${texto#* }..."
+                        echo "Descargando enlace: $urlYT..."
                         # Obtenemos el nombre de audio y video
                         ficheroAenviarA=-1
                         ficheroAenviarV=-1
-                        ficheroAenviarA=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "${texto#* }" )
-                        ficheroAenviarV=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "i" "${texto#* }" )
+                        ficheroAenviarA=$( $downytRuta "-n" "-a" "$urlYT")
+                        ficheroAenviarV=$( $downytRuta "-n" "-v" "A" "$urlYT")
+                        echo -e "Audio Y vídeo:\n$ficheroAenviarA \n$ficheroAenviarV \n"
+#                         ficheroAenviarA=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "${texto#* }" )
+#                         ficheroAenviarV=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "i" "${texto#* }" )
 
                             #Comprobamos si debemos enviar y donde guardar
                         #Si el comando es /yt se envia de vuelta el archivo
-                        if [ $(echo "$texto" | cut -d' ' -f1) =  "/yt" ]; then
-                            #Descarga
-                            ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
+#                         if [ $(echo "$texto" | cut -d' ' -f1) =  "/yt" ]; then
+                        if [ "${texto#* }" =  "/yt" ]; then # el cas /ytp será el else
+                            #Descarga para enviar al chat
+                            $downytRuta -p "$rutaGuardado" -a   "$urlYT" #Solo audio
+                            $downytRuta -p "$rutaGuardado" -v a "$urlYT" #Vídeo 1080p-AV1
+#                             $downytRuta -p "$rutaGuardado" -v b "$urlYT" #Vídeo 1080p-MaxBitrate
+#                             $downytRuta -p "$rutaGuardado" -v c "$urlYT" #Vídeo max
+#                             ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
                             #Enviamos
                             respuestaIa=""
                             if [ "$ficheroAenviarA" != "-1" ]; then
@@ -466,18 +506,26 @@ for ((;;)); do
                                 textoInformativo=$( basename "$ficheroAenviarV" )
                                 echo $ficheroAenviarV
                                 enviarDocumento "$botToken" "$chatOrigen" "$ficheroAenviarV" "$textoInformativo" "$idMensaje"
-                                respuestaIa+="Video Enviado.\n"
+                                if (( $? != "0" )); then
+                                    respuestaIa+="Vídeo muy grande para enviar."
+                                else
+                                    respuestaIa+="Video Enviado.\n"
+                                fi
                             else
-                                respuestaIa+="Vídeo muy grande para enviar."
+                                respuestaIa+="Error en audio.\n"
                             fi
                             respuestaIa+="\nOperación terminada."
                         else
-                            #Si el comando es /ytn solo se almacena
+                            #Si el comando es /ytp solo se almacena
                             #Solo el admin puede usar este comando
                             if [[  "$idAutor" == "$idAlex" ]]; then
                                 #Solo descargamos
-                                ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
-                                respuestaIa="Descàrga completada en .../scriptsAlex/en-ello/ytdw/ytdw"
+                                $downytRuta -p "$rutaGuardado" -a   "$urlYT" #Solo audio
+                                $downytRuta -p "$rutaGuardado" -v a "$urlYT" #Vídeo 1080p-AV1
+                                $downytRuta -p "$rutaGuardado" -v b "$urlYT" #Vídeo 1080p-MaxBitrate
+                                $downytRuta -p "$rutaGuardado" -v c "$urlYT" #Vídeo max
+#                                 ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
+                                respuestaIa="Descarga completada en $rutaGuardado"
                             else
                                 respuestaIa="Sols l'administrador pot usar aquesta opció."
                             fi

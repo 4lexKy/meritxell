@@ -46,6 +46,10 @@ mkdir -p ./contexto
 mkdir -p ./img
 mkdir -p ./temp
 mkdir -p ./interno
+mkdir -p ./.dependencias
+
+    #Definir rutas de descarga
+rutaDescargaYoutube="~/Descargas/downyt"
 
 #   DISTRIBUCION DE CARPETAS
 # desarrollo

@@ -41,6 +41,7 @@ Sí, tiene dependencias de:
 Sí, tiene dependencias de:
 - [Ollama](https://ollama.com/download)
 - curl (Debian/Ubuntu)
+- git (Debian/Ubuntu)
 - sed (Debian/Ubuntu)
 - jq (Debian/Ubuntu)
 - base64 (Debian/Ubuntu)
