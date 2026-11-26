@@ -479,7 +479,21 @@ for ((;;)); do
                         ficheroAenviarA=-1
                         ficheroAenviarV=-1
                         ficheroAenviarA=$( $downytRuta "-n" "-a" "$urlYT")
+                        auxTema=$(dirname "$ficheroAenviarA")
+                        auxArtista=$auxTema
+                        auxTema=$(basename "$auxTema")
+                        auxArtista=$(dirname "$auxArtista")
+                        auxArtista=$(basename "$auxArtista")
+                        ficheroAenviarA="${auxArtista}/${auxTema}/$(basename "$ficheroAenviarA")"
+
                         ficheroAenviarV=$( $downytRuta "-n" "-v" "A" "$urlYT")
+                        auxTema=$(dirname "$ficheroAenviarV")
+                        auxArtista=$auxTema
+                        auxTema=$(basename "$auxTema")
+                        auxArtista=$(dirname "$auxArtista")
+                        auxArtista=$(basename "$auxArtista")
+                        ficheroAenviarV="${auxArtista}/${auxTema}/$(basename "$ficheroAenviarV")"
+
                         echo -e "Audio Y vídeo:\n$ficheroAenviarA \n$ficheroAenviarV \n"
 #                         ficheroAenviarA=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "${texto#* }" )
 #                         ficheroAenviarV=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "i" "${texto#* }" )
@@ -500,7 +514,7 @@ for ((;;)); do
                             respuestaIa=""
                             if [ "$ficheroAenviarA" != "-1" ]; then
                                 textoInformativo=$( basename "$ficheroAenviarA" )
-                                enviarDocumento "$botToken" "$chatOrigen" "$ficheroAenviarA" "$textoInformativo" "$idMensaje"
+                                enviarDocumento "$botToken" "$chatOrigen" "${rutaGuardado}/${ficheroAenviarA}" "$textoInformativo" "$idMensaje"
                                 respuestaIa+="Audio enviado.\n"
                             else
                                 respuestaIa+="Error en audio.\n"
@@ -508,7 +522,7 @@ for ((;;)); do
                             if [ "$ficheroAenviarV" != "-1" ]; then
                                 textoInformativo=$( basename "$ficheroAenviarV" )
                                 echo $ficheroAenviarV
-                                enviarDocumento "$botToken" "$chatOrigen" "$ficheroAenviarV" "$textoInformativo" "$idMensaje"
+                                enviarDocumento "$botToken" "$chatOrigen" "${rutaGuardado}/${ficheroAenviarV}" "$textoInformativo" "$idMensaje"
                                 if (( "$?" != "0" )); then
                                     respuestaIa+="Vídeo muy grande para enviar."
                                 else
