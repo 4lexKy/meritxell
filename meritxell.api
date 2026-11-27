@@ -384,7 +384,7 @@ for ((;;)); do
                 /hw)
                     #Mostramos mi comando sis + le quitamos los caracteres de los colores + sustituimos endl por \n para telegram
                     respuestaIa=$(sis | sed $'s/\x1b\[[0-9;]*m//g' | sed ':a;N;$!ba;s/\n/\\n/g')
-#                     respuestaIa=$(hostnamectl && lscpu | grep "Nombre del modelo:" && lscpu | grep "CPU(s):" && lscpu | grep "Operating System" && lscpu | grep "Kernel" )
+                    # respuestaIa=$(hostnamectl && lscpu | grep "Nombre del modelo:" && lscpu | grep "CPU(s):" && lscpu | grep "Operating System" && lscpu | grep "Kernel" )
                     ;;
                 /clear)
                     contexto=""
@@ -495,21 +495,15 @@ for ((;;)); do
                         ficheroAenviarV="${auxArtista}/${auxTema}/$(basename "$ficheroAenviarV")"
 
                         echo -e "Audio Y vídeo:\n$ficheroAenviarA \n$ficheroAenviarV \n"
-#                         ficheroAenviarA=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "${texto#* }" )
-#                         ficheroAenviarV=$( ~/scriptsAlex/en_ello/ytdw/ytdw "i" "i" "${texto#* }" )
 
                             #Comprobamos si debemos enviar y donde guardar
                         #Si el comando es /yt se envia de vuelta el archivo
-#                         if [ $(echo "$texto" | cut -d' ' -f1) =  "/yt" ]; then
                         if [[ "${texto%% *}" == "/yt" ]]; then # el cas /ytp será el else
                             #Eliminamos los archivos anteriores para que no ocupen
                             rm -rf $rutaGuardado/*
                             #Descarga para enviar al chat
                             $downytRuta -p "$rutaGuardado" -a   "$urlYT" #Solo audio
                             $downytRuta -p "$rutaGuardado" -v a "$urlYT" #Vídeo 1080p-AV1
-#                             $downytRuta -p "$rutaGuardado" -v b "$urlYT" #Vídeo 1080p-MaxBitrate
-#                             $downytRuta -p "$rutaGuardado" -v c "$urlYT" #Vídeo max
-#                             ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
                             #Enviamos
                             respuestaIa=""
                             if [ "$ficheroAenviarA" != "-1" ]; then
@@ -541,7 +535,6 @@ for ((;;)); do
                                 $downytRuta -p "$rutaGuardado" -v a "$urlYT" #Vídeo 1080p-AV1
                                 $downytRuta -p "$rutaGuardado" -v b "$urlYT" #Vídeo 1080p-MaxBitrate
                                 $downytRuta -p "$rutaGuardado" -v c "$urlYT" #Vídeo max
-#                                 ~/scriptsAlex/en_ello/ytdw/ytdw "${texto#* }"
                                 respuestaIa="Descarga completada :)"
                             else
                                 respuestaIa="Sols l'administrador pot usar aquesta opció."
